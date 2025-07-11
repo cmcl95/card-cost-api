@@ -26,6 +26,20 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // MapStruct
+    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+
+    // Bridge between Lombok and MapStruct
+    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+
+    // H2 Database
+    runtimeOnly 'com.h2database:h2'
+
     // Logging (Log4j)
     implementation platform('org.apache.logging.log4j:log4j-bom:2.24.0')
     implementation "org.springframework.boot:spring-boot-starter-log4j2"
