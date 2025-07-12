@@ -43,6 +43,9 @@ dependencies {
     // H2 Database
     runtimeOnly 'com.h2database:h2'
 
+    // PostgreSQL Driver
+    implementation 'org.postgresql:postgresql'
+
     // Logging (Log4j)
     implementation platform('org.apache.logging.log4j:log4j-bom:2.24.0')
     implementation "org.springframework.boot:spring-boot-starter-log4j2"
