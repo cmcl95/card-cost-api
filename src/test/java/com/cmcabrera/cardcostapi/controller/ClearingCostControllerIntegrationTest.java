@@ -216,7 +216,7 @@ public class ClearingCostControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(invalidDto)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Validation Failed"))
+                .andExpect(jsonPath("$.error").value("Validation failed"))
                 .andExpect(jsonPath("$.details[0]").value("countryCode: size must be between 2 and 2"));
     }
 }

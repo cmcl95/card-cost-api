@@ -31,13 +31,10 @@ public class AuthController {
 
     @PostMapping
     public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequestDTO authenticationRequestDTO) {
-        try {
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(authenticationRequestDTO.getUsername(), authenticationRequestDTO.getPassword())
-            );
-        } catch (BadCredentialsException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(authenticationRequestDTO.getUsername(), authenticationRequestDTO.getPassword())
+        );
 
         final UserDetails userDetails = userDetailsService.loadUserByUsername(authenticationRequestDTO.getUsername());
         final String jwt = jwtUtil.generateToken(userDetails);

@@ -246,7 +246,7 @@ public class CardCostControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(requestDTO)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status", is(400)))
-                .andExpect(jsonPath("$.error", is("Validation Failed")))
+                .andExpect(jsonPath("$.error", is("Validation failed")))
                 .andExpect(jsonPath("$.details[0]", is("cardNumber: size must be between 8 and 19")));
     }
 
