@@ -13,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,9 +32,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(properties = "spring.profiles.active=test")
+@SpringBootTest()
+@ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class CardCostControllerIntegrationTest {
 
     @Autowired
@@ -56,7 +60,7 @@ public class CardCostControllerIntegrationTest {
     void setUp() throws Exception {
         clearingCostRepository.deleteAll();
         entityManager.createNativeQuery("TRUNCATE TABLE clearing_costs RESTART IDENTITY").executeUpdate();
-        jwtToken = obtainJwtToken("testuser", "password");
+        jwtToken = obtainJwtToken("test-user", "password");
     }
 
     private String obtainJwtToken(String username, String password) throws Exception {
@@ -244,6 +248,29 @@ public class CardCostControllerIntegrationTest {
                 .andExpect(jsonPath("$.status", is(400)))
                 .andExpect(jsonPath("$.error", is("Validation Failed")))
                 .andExpect(jsonPath("$.details[0]", is("cardNumber: size must be between 8 and 19")));
+    }
+
+    @Test
+    void givenTooManyRequests_whenCalculateCardCost_thenReturnsTooManyRequests() throws Exception {
+        // Given a small rate limit for testing (configured in RateLimitingTestConfig.java)
+        CardCostRequestDTO requestDTO = new CardCostRequestDTO();
+        requestDTO.setCardNumber("4571731234567890");
+
+        // Consume tokens until rate limit is hit (test bucket size is 3)
+        for (int i = 0; i < 3; i++) {
+            mockMvc.perform(post("/api/v1/payment-cards-cost")
+                            .header("Authorization", "Bearer " + jwtToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(requestDTO)))
+                    .andExpect(status().isOk()); // First 3 requests should pass
+        }
+
+        // The 4th attempt should be rate limited
+        mockMvc.perform(post("/api/v1/payment-cards-cost")
+                        .header("Authorization", "Bearer " + jwtToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isTooManyRequests());
     }
 }
 

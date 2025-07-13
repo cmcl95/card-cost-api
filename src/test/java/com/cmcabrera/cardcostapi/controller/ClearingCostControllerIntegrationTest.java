@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,9 +29,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.hamcrest.Matchers.is;
 
-@SpringBootTest(properties = "spring.profiles.active=test")
+@SpringBootTest()
+@ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class ClearingCostControllerIntegrationTest {
 
     @Autowired
@@ -48,8 +52,9 @@ public class ClearingCostControllerIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        clearingCostRepository.deleteAll();
         entityManager.createNativeQuery("TRUNCATE TABLE clearing_costs RESTART IDENTITY").executeUpdate();
-        jwtToken = obtainJwtToken("testuser", "password");
+        jwtToken = obtainJwtToken("test-user", "password");
     }
 
     private String obtainJwtToken(String username, String password) throws Exception {
