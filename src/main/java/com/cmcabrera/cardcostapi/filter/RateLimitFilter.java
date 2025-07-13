@@ -1,5 +1,7 @@
 package com.cmcabrera.cardcostapi.filter;
 
+import com.cmcabrera.cardcostapi.dto.ApiErrorDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.bucket4j.Bucket;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -10,16 +12,19 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Collections;
 
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
 
     private final Bucket paymentCardsCostBucket;
     private final Bucket authenticationBucket;
+    private final ObjectMapper objectMapper;
 
-    public RateLimitFilter(Bucket paymentCardsCostBucket, Bucket authenticationBucket) {
+    public RateLimitFilter(Bucket paymentCardsCostBucket, Bucket authenticationBucket, ObjectMapper objectMapper) {
         this.paymentCardsCostBucket = paymentCardsCostBucket;
         this.authenticationBucket = authenticationBucket;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -28,18 +33,28 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         if (requestURI.startsWith("/api/v1/payment-cards-cost")) {
             if (!paymentCardsCostBucket.tryConsume(1)) {
-                response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-                response.getWriter().write("Too many requests for payment cards cost. Please try again later.");
+                handleTooManyRequests(response, "Too many requests for payment cards cost. Please try again later.");
                 return;
             }
-        } else if (requestURI.startsWith("/api/v1/authenticate")) { // Corrected URI for authentication
+        } else if (requestURI.startsWith("/api/v1/authenticate")) {
             if (!authenticationBucket.tryConsume(1)) {
-                response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-                response.getWriter().write("Too many authentication attempts. Please try again later.");
+                handleTooManyRequests(response, "Too many authentication attempts. Please try again later.");
                 return;
             }
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private void handleTooManyRequests(HttpServletResponse response, String message) throws IOException {
+        ApiErrorDTO apiError = new ApiErrorDTO(
+                HttpStatus.TOO_MANY_REQUESTS.value(),
+                HttpStatus.TOO_MANY_REQUESTS.getReasonPhrase(),
+                Collections.singletonList(message)
+        );
+
+        response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+        response.setContentType("application/json");
+        response.getWriter().write(objectMapper.writeValueAsString(apiError));
     }
 }
