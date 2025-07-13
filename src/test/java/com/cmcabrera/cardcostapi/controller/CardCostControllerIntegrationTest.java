@@ -24,6 +24,8 @@ import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.when;
+import com.cmcabrera.cardcostapi.dto.AuthenticationRequestDTO;
+import com.cmcabrera.cardcostapi.dto.AuthenticationResponseDTO;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -48,10 +50,24 @@ public class CardCostControllerIntegrationTest {
     @PersistenceContext
     private EntityManager entityManager;
 
+    private String jwtToken;
+
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         clearingCostRepository.deleteAll();
         entityManager.createNativeQuery("TRUNCATE TABLE clearing_costs RESTART IDENTITY").executeUpdate();
+        jwtToken = obtainJwtToken("testuser", "password");
+    }
+
+    private String obtainJwtToken(String username, String password) throws Exception {
+        AuthenticationRequestDTO authRequest = new AuthenticationRequestDTO(username, password);
+        String response = mockMvc.perform(post("/api/v1/authenticate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(authRequest)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        AuthenticationResponseDTO authResponse = objectMapper.readValue(response, AuthenticationResponseDTO.class);
+        return authResponse.getJwt();
     }
 
     @Test
@@ -87,6 +103,7 @@ public class CardCostControllerIntegrationTest {
 
         // When & Then
         mockMvc.perform(post("/api/v1/payment-cards-cost")
+                        .header("Authorization", "Bearer " + jwtToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDTO)))
                 .andExpect(status().isOk())
@@ -127,6 +144,7 @@ public class CardCostControllerIntegrationTest {
 
         // When & Then
         mockMvc.perform(post("/api/v1/payment-cards-cost")
+                        .header("Authorization", "Bearer " + jwtToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDTO)))
                 .andExpect(status().isOk())
@@ -167,6 +185,7 @@ public class CardCostControllerIntegrationTest {
 
         // When & Then
         mockMvc.perform(post("/api/v1/payment-cards-cost")
+                        .header("Authorization", "Bearer " + jwtToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDTO)))
                 .andExpect(status().isOk())
@@ -202,6 +221,7 @@ public class CardCostControllerIntegrationTest {
 
         // When & Then
         mockMvc.perform(post("/api/v1/payment-cards-cost")
+                        .header("Authorization", "Bearer " + jwtToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDTO)))
                 .andExpect(status().isOk())
@@ -217,6 +237,7 @@ public class CardCostControllerIntegrationTest {
 
         // When & Then
         mockMvc.perform(post("/api/v1/payment-cards-cost")
+                        .header("Authorization", "Bearer " + jwtToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDTO)))
                 .andExpect(status().isBadRequest())
