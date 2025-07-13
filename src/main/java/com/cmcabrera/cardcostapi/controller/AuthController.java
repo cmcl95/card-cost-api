@@ -4,6 +4,7 @@ import com.cmcabrera.cardcostapi.dto.AuthenticationRequestDTO;
 import com.cmcabrera.cardcostapi.dto.AuthenticationResponseDTO;
 import com.cmcabrera.cardcostapi.service.UserDetailsServiceImpl;
 import com.cmcabrera.cardcostapi.util.JwtUtil;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -29,13 +30,13 @@ public class AuthController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequestDTO authenticationRequestDTO) throws Exception {
+    public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequestDTO authenticationRequestDTO) {
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(authenticationRequestDTO.getUsername(), authenticationRequestDTO.getPassword())
             );
         } catch (BadCredentialsException e) {
-            throw new Exception("Incorrect username or password", e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         final UserDetails userDetails = userDetailsService.loadUserByUsername(authenticationRequestDTO.getUsername());
